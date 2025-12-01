@@ -20,15 +20,23 @@ var typesenseContainer = typesense.GetEndpoint("typesense");
 
 var questionDb = postgres.AddDatabase("questionDb");
 
+var rabbitmq = builder.AddRabbitMQ("messaging")
+    .WithDataVolume("rabbitmq-data")
+    .WithManagementPlugin(port: 15672);
+
 var questionSvc = builder.AddProject<Projects.QuestionService>("question-svc")
     .WithReference(keycloak)
     .WithReference(questionDb)
+    .WithReference(rabbitmq)
     .WaitFor(keycloak) // When up-running this line of code waits for Keycloak to be up-and-running before us.
-    .WaitFor(questionDb);
+    .WaitFor(questionDb)
+    .WaitFor(rabbitmq);
 
 var searchSvc = builder.AddProject<Projects.SearchService>("search-svc")
     .WithEnvironment("typesense-api-key", typesenseApiKey)
     .WithReference(typesenseContainer)
-    .WaitFor(typesense);
+    .WithReference(rabbitmq)
+    .WaitFor(typesense)
+    .WaitFor(rabbitmq);
 
 builder.Build().Run();
