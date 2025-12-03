@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Contracts;
+using JasperFx.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -63,10 +64,14 @@ public class QuestionsController(QuestionDbContext db, IMessageBus bus, TagServi
     [HttpGet("{id}")]
     public async Task<ActionResult<Question>> GetQuestion(string id)
     {
-        var question = await db.Questions.FindAsync(id);
+        var question = await db.Questions
+            .Include(x => x.Answers)
+            .FirstOrDefaultAsync(x => x.Id == id);
+        
         if (question is null) return NotFound();
 
-        await db.Questions.Where(x => x.Id == id)
+        await db.Questions
+            .Where(x => x.Id == id)
             .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.ViewCount, x => x.ViewCount + 1));
         
         return question;
@@ -113,6 +118,113 @@ public class QuestionsController(QuestionDbContext db, IMessageBus bus, TagServi
         await db.SaveChangesAsync();
 
         await bus.PublishAsync(new QuestionDeleted(question.Id));
+        
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("{questionId}/answers")]
+    public async Task<ActionResult> CreateAnswer(string questionId, CreateAnswerDto dto)
+    {
+        var question = await db.Questions.FindAsync(questionId);
+        if (question is null) return NotFound();
+        
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var name = User.FindFirstValue("name");
+        
+        if (userId is null || name is null) return BadRequest("Cannot get user details");
+        
+        var answer = new Answer
+        {
+            Content =  dto.Content,
+            QuestionId = questionId,
+            UserId =  userId,
+            UserDisplayName = name
+        };
+        
+        question.AnswerCount++;
+        question.Answers.Add(answer);
+        
+        await db.SaveChangesAsync();
+        
+        await bus.PublishAsync(new UpdatedAnswerCount(question.Id, question.AnswerCount));
+
+        return Created($"questions/{question.Id}", answer);
+    }
+
+    [Authorize]
+    [HttpPut("{questionId}/answers/{answerId}")]
+    public async Task<ActionResult> UpdateAnswer(string questionId, string answerId, CreateAnswerDto dto)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var name = User.FindFirstValue("name");
+        
+        if (userId is null || name is null) return BadRequest("Cannot get user details");
+        
+        var answer = await db.Answers.FindAsync(answerId);
+        if (answer is null) return NotFound();
+        
+        if (userId != answer.UserId) return BadRequest("You are not authorized to update others answers.");
+        
+        answer.Content = "arci has been hhere";
+        answer.UpdatedAt = DateTime.UtcNow;
+
+        await db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpDelete("{questionId}/answers/{answerId}")]
+    public async Task<ActionResult> DeleteAnswer(string questionId, string answerId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var name = User.FindFirstValue("name");
+        
+        if (userId is null || name is null) return BadRequest("Cannot get user details");
+        
+        var answer = await db.Answers.FindAsync(answerId);
+        if (answer is null) return NotFound();
+        
+        var question = await db.Questions.FindAsync(questionId);
+        if (question is null) return NotFound();
+        
+        if (userId != answer.UserId) return BadRequest("You are not authorized to delete others answers.");
+        
+        question.AnswerCount--;
+        db.Answers.Remove(answer);
+        
+        await  db.SaveChangesAsync();
+        
+        await bus.PublishAsync(new UpdatedAnswerCount(question.Id, question.AnswerCount));
+        
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("{questionId}/answers/{answerId}/accept")]
+    public async Task<ActionResult> AcceptAnswer(string questionId, string answerId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var name = User.FindFirstValue("name");
+        
+        if (userId is null || name is null) return BadRequest("Cannot get user details");
+        
+        var answer = await db.Answers.FindAsync(answerId);
+        if (answer is null) return NotFound();
+        
+        var question = await db.Questions.FindAsync(questionId);
+        if (question is null) return NotFound();
+        
+        if (userId != question.AskerId) return BadRequest("You are not authorized to accept answers.");
+        
+        if (question.HasAcceptedAnswer) return BadRequest("Answer has been already accepted.");
+
+        question.HasAcceptedAnswer = true;
+        answer.Accepted = true;
+        
+        await  db.SaveChangesAsync();
+
+        await bus.PublishAsync(new AnswerAccepted(question.Id));
         
         return NoContent();
     }
