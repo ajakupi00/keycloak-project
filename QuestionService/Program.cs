@@ -20,13 +20,7 @@ builder.AddServiceDefaults(); // Setups health checks and telemetry stuff
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<TagService>();
-
-builder.Services.AddAuthentication()
-    .AddKeycloakJwtBearer(serviceName: "keycloak", realm: "overflow", options =>
-    {
-        options.RequireHttpsMetadata = false;
-        options.Audience = "overflow";
-    });
+builder.Services.AddKeycloakAuthentication();
 
 builder.AddNpgsqlDbContext<QuestionDbContext>("questionDb");
 
