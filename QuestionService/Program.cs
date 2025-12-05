@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using Common;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -29,43 +30,15 @@ builder.Services.AddAuthentication()
 
 builder.AddNpgsqlDbContext<QuestionDbContext>("questionDb");
 
-builder.Services.AddOpenTelemetry().WithTracing(tracing =>
-{
-    tracing.SetResourceBuilder(ResourceBuilder.CreateDefault()
-        .AddService(builder.Environment.ApplicationName))
-        .AddSource("Wolverine");
-});
-
-var retryPolicy = Policy
-    .Handle<BrokerUnreachableException>()
-    .Or<SocketException>()
-    .WaitAndRetryAsync(
-        retryCount: 5,
-        retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), 
-        (exception, timeSpan, retryCount) =>
-        {
-            Console.WriteLine($"Retry attempt {retryCount} failed. Retrying in {timeSpan.Seconds} seconds...");
-        });
-
 // Start when messaging service is ready to receive and publish messages, not when the container has started
-await retryPolicy.ExecuteAsync(async () =>
-{
-    var endpoint = builder.Configuration.GetConnectionString("messaging")
-                   ?? throw new InvalidOperationException("messaging connection string not found");
-
-    var factory = new ConnectionFactory
-    {
-        Uri = new Uri(endpoint)
-    };
-    
-    await using var connection = await factory.CreateConnectionAsync();
-});
-
 // Configuration for RabbitMQ client for this microservice
-builder.Host.UseWolverine(opts =>
+// Replaced the code so we don't copy-paste it in each project
+await builder.UserWolverineWithRabbitMqAsync(opts =>
 {
-    opts.UseRabbitMqUsingNamedConnection("messaging").AutoProvision();
     opts.PublishAllMessages().ToRabbitExchange("questions");
+    // Since Wolverine is not configured in this project, this line of code
+    // tells it to look in this projects assembly code
+    opts.ApplicationAssembly = typeof(Program).Assembly;
 });
 
 var app = builder.Build();

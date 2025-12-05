@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Common;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using SearchService.Models;
@@ -12,21 +13,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.AddServiceDefaults();
 
-builder.Services.AddOpenTelemetry().WithTracing(tracing =>
-{
-    tracing.SetResourceBuilder(ResourceBuilder.CreateDefault()
-            .AddService(builder.Environment.ApplicationName))
-        .AddSource("Wolverine");
-});
-
 // Configuration for RabbitMQ client for this microservice
-builder.Host.UseWolverine(opts =>
+await builder.UserWolverineWithRabbitMqAsync(opts =>
 {
-    opts.UseRabbitMqUsingNamedConnection("messaging").AutoProvision();
-    opts.ListenToRabbitQueue("questions.search", cfg =>
+    opts.ListenToRabbitQueue("questions.search", config =>
     {
-        cfg.BindExchange("questions");
+        config.BindExchange("questions");
     });
+    opts.ApplicationAssembly = typeof(Program).Assembly;
 });
 
 
