@@ -12,3 +12,7 @@ export async function getQuestions(tag?: string) {
 export async function getQuestionById(id: string) {
     return fetchClient<Question>( `/questions/${id}`, 'GET');
 }
+
+export async function searchQuestions(query: string) {
+    return fetchClient<Question[]>(`/search?query=${query}`, 'GET');
+}

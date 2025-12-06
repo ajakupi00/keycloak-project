@@ -3,6 +3,7 @@ import {JSX} from "react";
 import {Chip} from "@heroui/chip";
 import Link from "next/link";
 import {Avatar} from "@heroui/avatar";
+import {timeAgo} from "@/lib/util";
 
 type Props = {
     question: Question
@@ -24,7 +25,7 @@ export default function QuestionFooter({question}: Props) {
                 </div>
             </div>  
             <div className="flex flex-col basis-2/5 bg-primary/10 px-3 py-2 gap-2 rounded-lg">
-                <span className="font-extralight text-sm">asked {new Date(question.createdAt).toLocaleTimeString("hr")}</span>
+                <span className="font-extralight text-sm">asked {timeAgo(question.createdAt)}</span>
                 <div className="flex items-center gap-3">
                     <Avatar className="h-6 w-6" color="secondary" name={question.askerDisplayName.charAt(0)} />
                     <div className="flex flex-col items-center">
