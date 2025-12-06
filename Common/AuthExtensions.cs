@@ -21,7 +21,8 @@ public static class AuthExtensions
                         "http://localhost:6001/realms/overflow",
                         "http://keycloak/realms/overflow",
                         "http://id.overflow.local/realms/overflow" // This is for later deployment
-                    ]
+                    ],
+                    ClockSkew = TimeSpan.Zero,
                 };
             });
         
