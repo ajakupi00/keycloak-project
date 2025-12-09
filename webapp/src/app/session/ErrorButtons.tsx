@@ -2,7 +2,6 @@
 import {Button} from "@heroui/button";
 import {triggerError} from "@/lib/actions/errorActions";
 import {useState, useTransition} from "react";
-import {addToast} from "@heroui/toast";
 import {handleError} from "@/lib/util";
 
 export default function ErrorButtons() {

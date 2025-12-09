@@ -1,7 +1,6 @@
 'use client'
 
 import {User} from "next-auth";
-import {JSX} from "react";
 import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@heroui/dropdown";
 import {Avatar} from "@heroui/avatar";
 import {signOut} from "next-auth/react";

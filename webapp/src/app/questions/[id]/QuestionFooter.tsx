@@ -1,5 +1,4 @@
 import {Question} from "@/lib/types";
-import {JSX} from "react";
 import {Chip} from "@heroui/chip";
 import Link from "next/link";
 import {Avatar} from "@heroui/avatar";
