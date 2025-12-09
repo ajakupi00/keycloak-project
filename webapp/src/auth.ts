@@ -10,10 +10,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
     })],
     callbacks: {
-        async jwt({token, account})
+        async jwt({token, account, profile})
         {
             // Refresh token impl
             const now = Math.floor(Date.now() / 1000);
+            
+            if (profile && profile.sub)
+                token.sub = profile.sub
 
             // This statement is only true when we firstly login - no session
             if (account && account.access_token && account.refresh_token){
@@ -64,6 +67,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
         async session ({session, token}) 
         {
+            if (token.sub)
+                session.user.id = token.sub;
             if(token.accessToken)
                 session.accessToken = token.accessToken;
             

@@ -4,7 +4,7 @@ import {create} from "zustand/react";
 type TagStore = {
     tags: Tag[];
     setTags: (tags: Tag[]) => void;
-    getTagsBySlug: (slug: string | undefined) => Tag | undefined;
+    getTagsBySlug: (slug: string) => Tag | undefined;
 }
 
 export const useTagStore = create<TagStore>((set, get) => ({
