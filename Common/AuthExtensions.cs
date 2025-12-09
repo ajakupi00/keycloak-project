@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 
@@ -20,7 +19,8 @@ public static class AuthExtensions
                     [
                         "http://localhost:6001/realms/overflow",
                         "http://keycloak/realms/overflow",
-                        "http://id.overflow.local/realms/overflow" // This is for later deployment
+                        "http://id.overflow.local/realms/overflow", // This is for later deployment,
+                        "https://id.overflow.local/realms/overflow"
                     ],
                     ClockSkew = TimeSpan.Zero,
                 };

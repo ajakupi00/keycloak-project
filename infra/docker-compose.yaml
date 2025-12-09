@@ -21,6 +21,7 @@ services:
       KC_HOSTNAME_STRICT: "false"
       VIRTUAL_HOST: "id.overflow.local"
       VIRTUAL_PORT: "8080"
+      KC_PROXY_HEADERS: "xforwarded"
     expose:
       - "8080"
       - "9000"
@@ -186,10 +187,15 @@ services:
     image: "nginxproxy/nginx-proxy:1.8"
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - type: "bind"
         target: "/tmp/docker.sock"
         source: "/var/run/docker.sock"
+        read_only: true
+      - type: "bind"
+        target: "/etc/nginx/certs"
+        source: "/Users/ajakupi/Desktop/Aspire/Overflow/infra/devcerts"
         read_only: true
     networks:
       - "aspire"
