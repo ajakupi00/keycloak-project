@@ -1,11 +1,8 @@
 using System.Text.RegularExpressions;
 using Common;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using SearchService.Models;
 using Typesense;
 using Typesense.Setup;
-using Wolverine;
 using Wolverine.RabbitMQ;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,11 +12,7 @@ builder.AddServiceDefaults();
 
 // Configuration for RabbitMQ client for this microservice
 await builder.UserWolverineWithRabbitMqAsync(opts =>
-{
-    opts.ListenToRabbitQueue("questions.search", config =>
-    {
-        config.BindExchange("questions");
-    });
+{ 
     opts.ApplicationAssembly = typeof(Program).Assembly;
 });
 

@@ -16,7 +16,7 @@ var keycloak = builder.AddKeycloak("keycloak", 6001)
 
 var postgres = builder.AddPostgres("postgres", port: 5432)
     .WithDataVolume("postgres-data")
-    .WithPgAdmin();
+    .WithPgWeb();
 
 var typesenseApiKey = builder.Environment.IsDevelopment()
     ? builder.Configuration["Parameters:typesense-api-key"]
@@ -34,6 +34,7 @@ var typesense = builder.AddContainer("typesense", "typesense/typesense", "29.0")
 var typesenseContainer = typesense.GetEndpoint("typesense");
 
 var questionDb = postgres.AddDatabase("questionDb");
+var profileDb = postgres.AddDatabase("profileDb");
 
 var rabbitmq = builder.AddRabbitMQ("messaging")
     .WithDataVolume("rabbitmq-data")
@@ -47,11 +48,20 @@ var questionSvc = builder.AddProject<Projects.QuestionService>("question-svc")
     .WaitFor(questionDb)
     .WaitFor(rabbitmq);
 
+
 var searchSvc = builder.AddProject<Projects.SearchService>("search-svc")
     .WithEnvironment("typesense-api-key", typesenseApiKey)
     .WithReference(typesenseContainer)
     .WithReference(rabbitmq)
     .WaitFor(typesense)
+    .WaitFor(rabbitmq);
+
+var profileSvc = builder.AddProject<Projects.ProfileService>("profile-svc")
+    .WithReference(keycloak)
+    .WithReference(profileDb)
+    .WithReference(rabbitmq)
+    .WaitFor(keycloak)
+    .WaitFor(profileDb)
     .WaitFor(rabbitmq);
 
 var yarp = builder.AddYarp("gateway")
@@ -61,6 +71,7 @@ var yarp = builder.AddYarp("gateway")
         yarpBuilder.AddRoute("/test/{**catch-all}", questionSvc);
         yarpBuilder.AddRoute("/tags/{**catch-all}", questionSvc);
         yarpBuilder.AddRoute("/search/{**catch-all}", searchSvc);
+        yarpBuilder.AddRoute("/profiles/{**catch-all}", profileSvc);
     })
     .WithEnvironment("ASPNETCORE_URLS", "http://*:8001")
     .WithEndpoint(port: 8001, targetPort: 8001, scheme: "http", name: "gateway", isExternal: true)

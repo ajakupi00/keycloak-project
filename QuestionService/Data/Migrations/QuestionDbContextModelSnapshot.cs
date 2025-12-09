@@ -48,11 +48,6 @@ namespace QuestionService.Data.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UserDisplayName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -73,11 +68,6 @@ namespace QuestionService.Data.Migrations
 
                     b.Property<int>("AnswerCount")
                         .HasColumnType("integer");
-
-                    b.Property<string>("AskerDisplayName")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
 
                     b.Property<string>("AskerId")
                         .IsRequired()

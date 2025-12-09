@@ -11,8 +11,6 @@ public class Answer
     public required string Content { get; set; }
     [MaxLength(50)] 
     public required string UserId { get; set; }
-    [MaxLength(50)] 
-    public required string UserDisplayName { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public bool Accepted { get; set; }

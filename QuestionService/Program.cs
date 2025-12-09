@@ -29,7 +29,6 @@ builder.AddNpgsqlDbContext<QuestionDbContext>("questionDb");
 // Replaced the code so we don't copy-paste it in each project
 await builder.UserWolverineWithRabbitMqAsync(opts =>
 {
-    opts.PublishAllMessages().ToRabbitExchange("questions");
     // Since Wolverine is not configured in this project, this line of code
     // tells it to look in this projects assembly code
     opts.ApplicationAssembly = typeof(Program).Assembly;
