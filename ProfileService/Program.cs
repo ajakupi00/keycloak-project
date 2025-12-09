@@ -48,6 +48,43 @@ app.MapGet("/profiles/batch", async (string ids, ProfileDbContext db) =>
     return Results.Ok(rows);
 });
 
+app.MapGet("/profiles", async (string? sortBy, ProfileDbContext db) =>
+{
+    var profilesQuery = db.UserProfiles.AsQueryable();
+    switch (sortBy)
+    {
+        case "reputation":
+            profilesQuery = profilesQuery.OrderByDescending(x => x.Reputation);
+            break;
+        default:
+            profilesQuery = profilesQuery.OrderBy(x => x.DisplayName);
+            break;
+    }
+    var profiles = await profilesQuery.ToListAsync();
+    return Results.Ok(profiles);
+});
+
+app.MapGet("/profiles/{id}", async (string id, ProfileDbContext db) =>
+{
+    var profile = await db.UserProfiles.FirstOrDefaultAsync(x => x.Id == id);
+    return profile is null ? Results.NotFound() : Results.Ok(profile);
+});
+
+app.MapPut("/profiles/edit", async (UpdateProfileDto dto, ProfileDbContext db, ClaimsPrincipal user) =>
+{
+    var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId is null) return Results.Unauthorized();
+    
+    var profile = await db.UserProfiles.FindAsync(userId);
+    if (profile is null) return Results.NotFound();
+    
+    profile.DisplayName = dto.DisplayName ?? profile.DisplayName;
+    profile.Description = dto.Description ?? profile.Description;
+    
+    await db.SaveChangesAsync(); 
+    return Results.NoContent();
+}).RequireAuthorization();
+
 
 using var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;

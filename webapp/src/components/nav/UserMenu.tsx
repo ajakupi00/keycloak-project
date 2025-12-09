@@ -4,6 +4,7 @@ import {User} from "next-auth";
 import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@heroui/dropdown";
 import {Avatar} from "@heroui/avatar";
 import {signOut} from "next-auth/react";
+import Link from "next/link";
 
 type Props = {
     user: User    
@@ -19,7 +20,7 @@ export default function UserMenu({ user }: Props) {
                 </div>
             </DropdownTrigger>
             <DropdownMenu>
-                <DropdownItem key='edit'>Edit Profile</DropdownItem>
+                <DropdownItem key='edit' as={Link} href={`/profiles/${user.id}`}>Edit Profile</DropdownItem>
                 <DropdownItem 
                     key='logout' 
                     className="text-danger" 
