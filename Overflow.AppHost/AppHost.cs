@@ -35,6 +35,8 @@ var typesenseContainer = typesense.GetEndpoint("typesense");
 
 var questionDb = postgres.AddDatabase("questionDb");
 var profileDb = postgres.AddDatabase("profileDb");
+var statDb = postgres.AddDatabase("statDb");
+var voteDb = postgres.AddDatabase("voteDb");
 
 var rabbitmq = builder.AddRabbitMQ("messaging")
     .WithDataVolume("rabbitmq-data")
@@ -64,6 +66,20 @@ var profileSvc = builder.AddProject<Projects.ProfileService>("profile-svc")
     .WaitFor(profileDb)
     .WaitFor(rabbitmq);
 
+var statSvc = builder.AddProject<Projects.StatsService>("stat-svc")
+    .WithReference(statDb)
+    .WithReference(rabbitmq)
+    .WaitFor(statDb)
+    .WaitFor(rabbitmq);
+
+var voteSvc = builder.AddProject<Projects.VoteService>("vote-svc")
+    .WithReference(voteDb)    
+    .WithReference(keycloak)
+    .WithReference(rabbitmq)
+    .WaitFor(keycloak)
+    .WaitFor(voteDb)
+    .WaitFor(rabbitmq);
+
 var yarp = builder.AddYarp("gateway")
     .WithConfiguration(yarpBuilder =>
     {
@@ -72,6 +88,8 @@ var yarp = builder.AddYarp("gateway")
         yarpBuilder.AddRoute("/tags/{**catch-all}", questionSvc);
         yarpBuilder.AddRoute("/search/{**catch-all}", searchSvc);
         yarpBuilder.AddRoute("/profiles/{**catch-all}", profileSvc);
+        yarpBuilder.AddRoute("/stats/{**catch-all}", statSvc);
+        yarpBuilder.AddRoute("/votes/{**catch-all}", voteSvc);
     })
     .WithEnvironment("ASPNETCORE_URLS", "http://*:8001")
     .WithEndpoint(port: 8001, targetPort: 8001, scheme: "http", name: "gateway", isExternal: true)

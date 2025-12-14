@@ -4,19 +4,22 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <NoWarn>NU160</NoWarn>
         <NoWarn>NU1608</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Keycloak.Authentication" Version="9.4.0-preview.1.25378.8" />
-        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.4.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.11">
+        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.4.1" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.11"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="WolverineFx.RabbitMQ" Version="4.7.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Common\Common.csproj" />
+      <ProjectReference Include="..\Contracts\Contracts.csproj" />
+      <ProjectReference Include="..\Reputation\Reputation.csproj" />
     </ItemGroup>
 
 </Project>
