@@ -42,8 +42,28 @@ public class QuestionsController(QuestionDbContext db, IMessageBus bus, TagServi
             AskerId = userId,
         };
 
-        db.Questions.Add(question);
-        await db.SaveChangesAsync();
+        await using var transaction = await db.Database.BeginTransactionAsync();
+
+        try
+        {
+            db.Questions.Add(question);
+        
+            await db.SaveChangesAsync();
+
+            if (question.Title == "Rhino") throw new Exception("Rhino to big for rabittmq");
+        
+            // Publish message to the RabbitMQ bus
+            await bus.PublishAsync(new QuestionCreated(
+                question.Id, question.Title, 
+                question.Content, question.CreatedAt ,question.TagSlugs));
+            
+            await transaction.CommitAsync();
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
         
         var slugs = question.TagSlugs.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         if (slugs.Length > 0)
@@ -53,12 +73,6 @@ public class QuestionsController(QuestionDbContext db, IMessageBus bus, TagServi
                 .ExecuteUpdateAsync(x => x.SetProperty(t => t.UsageCount, t => t.UsageCount + 1));
         }
         
-        
-        // Publish message to the RabbitMQ bus
-        await bus.PublishAsync(new QuestionCreated(
-            question.Id, question.Title, 
-            question.Content, question.CreatedAt ,question.TagSlugs));
-
         return Created($"questions/{question.Id}", question);
     }
 
