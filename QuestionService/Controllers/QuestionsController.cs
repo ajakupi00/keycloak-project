@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Common;
 using Contracts;
 using Ganss.Xss;
 using JasperFx.Core;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using QuestionService.Data;
 using QuestionService.DTOs;
 using QuestionService.Models;
+using QuestionService.RequestHelpers;
 using QuestionService.Services;
 using Reputation;
 using Wolverine;
@@ -62,14 +64,32 @@ public class QuestionsController(QuestionDbContext db, IMessageBus bus, TagServi
 
     [AllowAnonymous]
     [HttpGet]
-    public async Task<ActionResult<List<Question>>> GetQuestions(string? tag)
+    public async Task<ActionResult<PaginationResult<Question>>> GetQuestions([FromQuery] QuestionQuery q)
     {
         var query = db.Questions.AsQueryable();
 
-        if (!string.IsNullOrEmpty(tag))
-            query = query.Where(x => x.TagSlugs.Contains(tag));
-        
-        return await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
+        if (!string.IsNullOrEmpty(q.Tag))
+            query = query.Where(x => x.TagSlugs.Contains(q.Tag));
+
+        query = query.OrderByDescending(x => x.CreatedAt);
+
+        query = q.Sort switch
+        {
+            "newest" => query.OrderByDescending(x => x.CreatedAt),
+            "active" => query.OrderByDescending(x => new[]
+            {
+                x.CreatedAt,
+                x.UpdatedAt ?? DateTime.MinValue,
+                x.Answers.Max(a => (DateTime?)a.CreatedAt) ?? DateTime.MinValue,
+                x.Answers.Max(a => a.UpdatedAt) ?? DateTime.MinValue,
+            }.Max()),
+            "unanswered" => query.Where(x => x.AnswerCount == 0).OrderByDescending(x => x.CreatedAt),
+            _ => query.OrderByDescending(x => x.CreatedAt)
+        };
+
+        var result = await query.ToPaginationResult(q);
+
+        return result;
     }
 
     [AllowAnonymous]
