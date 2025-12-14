@@ -27,18 +27,8 @@ if (app.Environment.IsDevelopment())
 }
 
 // Get hold of DbContext and apply non-applied Migrations
-using var scope = app.Services.CreateScope();
-var services = scope.ServiceProvider;
-try
-{
-    var context = services.GetRequiredService<VoteDbContext>();
-    await context.Database.MigrateAsync(); // Create and apply migrations
-}
-catch (Exception e)
-{
-    var logger = services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(e, "An error occurred seeding the DB.");
-}
+await app.MigrateDbContextAsync<VoteDbContext>();
+
 
 app.MapPost("/votes", async (CastVoteDto dto, VoteDbContext db, ClaimsPrincipal user, IMessageBus bus) =>
 {
